@@ -54,7 +54,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "enabled": True,
         "method": "auto",
         "desktop_command": "notify-send 'AiShot' '%body%' -u normal -t 15000",
-        "noctalia_socket": "~/.noctalia-shell/ipc",
+        "noctalia_socket": "~/.noctalia/sock",
         "max_body_chars": 1500,
     },
     "logging": {

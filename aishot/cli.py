@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -148,7 +149,12 @@ def cmd_test(args: argparse.Namespace) -> int:
         ok = False
 
     noct = expand(cfg["notify"]["noctalia_socket"])
-    print(f"{'✅' if noct.exists() else 'ℹ️ '} Noctalia IPC  {noct} {'найден' if noct.exists() else 'не найден (fallback: notify-send/file)'}")
+    has_cli = shutil.which("noctalia-shell") is not None
+    if has_cli and noct.exists():
+        print(f"✅ Noctalia     {noct} + CLI noctalia-shell — нативные OSD-уведомления")
+    else:
+        why = "нет CLI noctalia-shell в PATH" if not has_cli else f"нет сокета {noct}"
+        print(f"ℹ️  Noctalia     {why} — auto использует notify-send (mako/dunst) или файл")
     print("\nИТОГ:", "ок" if ok else "есть проблемы — см. docs/troubleshooting.md")
     return 0 if ok else 1
 

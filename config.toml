@@ -49,7 +49,10 @@ psm = 3
 #   vlm run / lmstudio → http://localhost:1234/v1
 base_url = "http://127.0.0.1:11434/v1"
 api_key = "ollama"          # для ollama любой, для других — реальный ключ
-model = "qwen2.5vl:7b"      # ВИЖЕН-модель! Она сама смотрит на картинку
+# Модель ставишь сам в `[prompt]` ниже или здесь. Важно: для скриншотов
+# нужна ВИЖЕН-версия (Qwen VL), чисто текстовая Qwen картинку не увидит —
+# тогда она будет решать задачу только по OCR-тексту (vision = false).
+model = "qwen3-vl:8b"       # пример; замени на свою (например qwen3.6)
 # vision = false — модель текстовая, отправлять только OCR-текст
 vision = true
 temperature = 0.3
@@ -82,14 +85,14 @@ no_proxy = "127.0.0.1,localhost"
 # Уведомления о результатах
 enabled = true
 # Способ: auto | desktop | noctalia | file
-# desktop  — notify-send (gnome/kde/libnotify, работает и под niri)
-# noctalia — запись JSON-события в FIFO ночталии (экспериментально, см. TroubleShooting)
+# desktop  — notify-send (libnotify → mako/dunst, работает и под niri)
+# noctalia — нативно через CLI `noctalia-shell send-notification` (Noctalia OSD)
 # file     — просто писать результат в .txt рядом со скриншотом
 method = "auto"
 # Команда для desktop-уведомлений (%title%, %body%)
 desktop_command = "notify-send 'AiShot' '%body%' -u normal -t 15000"
-# Путь к FIFO/сокету Noctalia (если method = noctalia)
-noctalia_socket = "~/.noctalia-shell/ipc"
+# Путь к сокету Noctalia (проверяется перед вызовом noctalia-shell)
+noctalia_socket = "~/.noctalia/sock"
 # Обрезать тело уведомления (0 = не обрезать)
 max_body_chars = 1500
 

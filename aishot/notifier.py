@@ -1,7 +1,6 @@
-"""Уведомления: desktop (notify-send / dunst / mako под niri), Noctalia IPC (эксперимент) или файл."""
+"""Уведомления: Noctalia OSD (noctalia-shell CLI) -> notify-send (mako/dunst) -> файл."""
 from __future__ import annotations
 
-import json
 import os
 import shutil
 import subprocess
@@ -38,29 +37,35 @@ def notify_desktop(cfg: dict, title: str, body: str) -> bool:
 
 
 def notify_noctalia(cfg: dict, title: str, body: str) -> bool:
-    """Экспериментально: Noctalia Shell слушает JSON-события на своём IPC-сокете/FIFO.
+    """Нативный путь Noctalia Shell: CLI `noctalia-shell send-notification`.
 
-    Документированный интерфейс ночталии со временем меняется — если не сработало,
-    переключись на method = "desktop" (mako/dunst видят уведомления и под niri).
+    Noctalia (дефолтная обвязка поверх niri) показывает собственные OSD-уведомления,
+     команду принимает через свой сокет (~/.noctalia/sock). Если CLI нет в PATH или
+    сокет не отвечает — auto-режим молча падает на notify-send (mako/dunst под niri).
     """
-    sock_path = expand(cfg["notify"].get("noctalia_socket", "~/.noctalia-shell/ipc"))
-    if not sock_path.exists():
-        LOG.warning("Noctalia IPC не найден по пути %s", sock_path)
+    if shutil.which("noctalia-shell") is None:
+        LOG.debug("noctalia-shell не найден в PATH")
         return False
-    event = {
-        "command": "notification.add",
-        "app": "aishot",
-        "title": title,
-        "body": body,
-        "urgency": "normal",
-    }
+    sock_path = expand(cfg["notify"].get("noctalia_socket", "~/.noctalia/sock"))
+    if not sock_path.exists():
+        LOG.warning("Noctalia socket не найден по пути %s", sock_path)
+        return False
+    cmd = [
+        "noctalia-shell", "send-notification",
+        "--app-name", "aishot",
+        "--title", title,
+        "--body", body,
+        "--timeout", "15",
+    ]
     try:
-        with open(sock_path, "w", encoding="utf-8") as f:
-            f.write(json.dumps(event, ensure_ascii=False) + "\n")
-        LOG.info("Событие записано в Noctalia IPC")
-        return True
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if r.returncode == 0:
+            LOG.info("Уведомление отправлено через noctalia-shell")
+            return True
+        LOG.warning("noctalia-shell вернул %d: %s", r.returncode, (r.stderr or "").strip()[:200])
+        return False
     except Exception as e:  # noqa: BLE001
-        LOG.warning("Noctalia IPC запись не удалась: %s", e)
+        LOG.warning("noctalia-shell не сработал: %s", e)
         return False
 
 

@@ -6,7 +6,7 @@
 
 ```
 slurp (выбор области) → grim (PNG в папку из конфига) → OCR (tesseract) + vision-LLM (ollama)
-        → ответ → notify-send / Noctalia / .answer.txt   +   лог каждого действия
+        → ответ → Noctalia OSD / notify-send / .answer.txt   +   лог каждого действия
 ```
 
 ## Быстрый старт
@@ -56,7 +56,7 @@ Key {
 | `[llm]`       | адрес сервера (ollama/LM Studio/llama.cpp/vLLM), модель, `vision`, temp, таймаут |
 | `[prompt]`    | **главный промт-задача** с плейсхолдерами `{text}` и `{question}` |
 | `[network]`   | proxy/no_proxy до LLM-сервера |
-| `[notify]`    | способ: `auto` → Noctalia IPC → notify-send → файл; длина тела |
+| `[notify]`    | способ: `auto` → Noctalia (`noctalia-shell send-notification`) → notify-send → файл; длина тела |
 | `[logging]`   | путь лога, уровень, вывод в консоль |
 
 Логи действий: `~/.local/state/aishot/aishot.log`. Ответ всегда дублируется в `<скриншот>.answer.txt`.
@@ -71,7 +71,7 @@ aishot/
 ├── ocr.py           # tesseract (запасной канал контекста)
 ├── llm.py           # OpenAI-совместимый клиент (картинка base64 + промт)
 ├── pipeline.py      # скриншот → контекст → промт → ИИ → уведомление
-├── notifier.py      # Noctalia IPC / notify-send / файл
+├── notifier.py      # Noctalia OSD / notify-send / файл
 └── logger.py        # лог действий
 docs/                # служебные заметки (AIShot.md, slurp_grim.md, troubleshooting.md...)
 ```
@@ -80,5 +80,7 @@ docs/                # служебные заметки (AIShot.md, slurp_grim.
 
 См. `docs/troubleshooting.md` и `aishot test`. Частое:
 - **HiDPI/4K**: координаты slurp логические, пиксели физические → поставь `[grim] scale = 2`.
-- **Noctalia не показывает уведомления**: метод `auto` сам падает на `notify-send` (mako/dunst работают под niri).
+- **Noctalia не показывает уведомления**: нужен бинарник `noctalia-shell` в PATH и сокет `~/.noctalia/sock`
+  (дефолтная связка niri+Noctalia это даёт). Если чего-то нет, метод `auto` сам падает на `notify-send`
+  (mako/dunst работают под niri), а затем в `.answer.txt`. Путь сокета — `[notify].noctalia_socket`.
 - **Модель не видит картинку**: нужна vision-модель (`qwen2.5vl`, `llama3.2-vision`); текстовую модель переключи `vision = false` — тогда уйдёт только OCR-текст.
