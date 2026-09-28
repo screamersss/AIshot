@@ -1,0 +1,107 @@
+# ════════════════════════════════════════════════════════════════════
+#  AiShot — единый конфигурационный файл.
+#  Здесь настраивается АБСОЛЮТНО ЛЮБАЯ ХРЕНЬ (с)
+#  Комментарии на русском не мешают парсеру (tomllib понимает #).
+# ════════════════════════════════════════════════════════════════════
+
+[general]
+# Папка, куда сохраняются скриншоты (будет создана автоматически)
+screenshots_dir = "~/Pictures/AiShot"
+# Язык ответа нейросети ("ru", "en", ...)
+language = "ru"
+# Шаблон имени файла скриншота
+filename_template = "shot_{time:%Y-%m-%d_%H-%M-%S}.png"
+
+[slurp]
+# Цвет выделения области: RRGGBB или RRGGBBAA (hex). catppuccin mauve с 25% прозрачностью:
+selection_color = "b4befe40"
+border_color = "cba6f7"
+border_weight = 2
+# Показывать размеры выделяемой области (-d)
+show_dimensions = true
+# Формат вывода геометрии slurp: "%x,%y %wx%h"
+format = "%x,%y %wx%h"
+
+[grim]
+# Масштаб для HiDPI/4K (1 = обычный, 2 = Retina). См. docs/slurp_grim.md
+scale = 1
+# Формат изображения: png | jpg | jpeg
+output_format = "png"
+# Качество jpg (0-100), игнорируется для png
+quality = 90
+
+[clipboard]
+# Копировать скриншот в буфер обмена через wl-copy (wl-clipboard)
+enabled = true
+
+[ocr]
+# Распознавание текста на скриншоте
+enabled = true
+# Языги tesseract: eng, rus, deu... через плюс: "rus+eng"
+languages = "rus+eng"
+# PSM (page segmentation mode) — 3 по умолчанию
+psm = 3
+
+[llm]
+# Локальная нейросеть. Любой OpenAI-совместимый сервер:
+#   ollama serve  →  http://127.0.0.1:11434/v1  (модели: qwen2.5vl, llama3.2-vision, minicpm-v...)
+#   llama.cpp server → http://127.0.0.1:8080/v1
+#   vlm run / lmstudio → http://localhost:1234/v1
+base_url = "http://127.0.0.1:11434/v1"
+api_key = "ollama"          # для ollama любой, для других — реальный ключ
+model = "qwen2.5vl:7b"      # ВИЖЕН-модель! Она сама смотрит на картинку
+# vision = false — модель текстовая, отправлять только OCR-текст
+vision = true
+temperature = 0.3
+max_tokens = 2048
+timeout_sec = 300
+
+[prompt]
+# Промт-задача, которую ИИ выполняет с контекстом со скриншота.
+# Плейсхолдеры: {text} — распознанный текст, {question} — твой вопрос из stdin/аргумента
+task = """
+Ты — системный ИИ-ассистент AiShot. Пользователь прислал скриншот и просит помочь.
+
+Контекст со скриншота (распознанный текст):
+\"\"\"{text}\"\"\"
+
+Задача пользователя: {question}
+
+Ответь коротко, по делу и на языке пользователя. Если в тексте есть код —
+исправь его и покажи готовый вариант. Если это ошибка — объясни причину и решение.
+"""
+# Промт по умолчанию, если пользователь ничего не спросил (через -w/--watch или без вопроса)
+default_question = "Проанализируй контекст скриншота и предложи, какую задачу тут можно решить. Реши её."
+
+[network]
+# Сеть, через которую ходим к LLM. Для Wayland-изолированных окружений может пригодиться.
+proxy = ""                   # например "http://127.0.0.1:7890" или пусто
+no_proxy = "127.0.0.1,localhost"
+
+[notify]
+# Уведомления о результатах
+enabled = true
+# Способ: auto | desktop | noctalia | file
+# desktop  — notify-send (gnome/kde/libnotify, работает и под niri)
+# noctalia — запись JSON-события в FIFO ночталии (экспериментально, см. TroubleShooting)
+# file     — просто писать результат в .txt рядом со скриншотом
+method = "auto"
+# Команда для desktop-уведомлений (%title%, %body%)
+desktop_command = "notify-send 'AiShot' '%body%' -u normal -t 15000"
+# Путь к FIFO/сокету Noctalia (если method = noctalia)
+noctalia_socket = "~/.noctalia-shell/ipc"
+# Обрезать тело уведомления (0 = не обрезать)
+max_body_chars = 1500
+
+[logging]
+# Подробный лог всех действий
+file = "~/.local/state/aishot/aishot.log"
+level = "INFO"              # DEBUG | INFO | WARNING | ERROR
+# Печатать лог ещё и в консоль
+console = true
+
+[hotkey]
+# Подсказка по назначению хоткея в niri (сам AiShot клавиатуру не перехватывает).
+# Добавь в ~/.config/niri/config.kdl:
+#   Key { Super+Shift+A { Spawn { command "aishot run"; } } }
+note = "Super+Shift+A -> aishot run"
