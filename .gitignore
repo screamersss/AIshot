@@ -1,3 +1,8 @@
 __pycache__/
 *.pyc
 .answer.txt
+
+# личные заметки (не публикуем)
+docs/AIShot.md
+docs/troubleshooting.md
+docs/my_system.md
