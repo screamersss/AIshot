@@ -20,8 +20,11 @@ sudo pacman -S grim slurp wl-clipboard tesseract tesseract-data-rus tesseract-da
 ollama pull qwen2.5vl:7b   # или llama3.2-vision, minicpm-v ...
 ollama serve &
 
-# 3. Установка самого AiShot (зависимости от Python-пакетов НЕТ, нужен Python >= 3.11):
+# 3. Установка самого AiShot (ядро без внешних зависимостей, Python >= 3.11):
 pip install .              # даст команду `aishot`
+pip install Pillow pywayland   # опционально: оверлей-«прожектор» v2
+                               # (фон затемнён, внутри рамки картинка яркая).
+                               # Без них — обычный slurp с настраиваемой маской.
 #   либо без установки:    python aishot.py ...
 
 # 4. Конфиг:
