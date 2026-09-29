@@ -23,9 +23,25 @@ from aishot import pipeline  # noqa: E402
 from aishot.config import default_config_path, ensure_dirs, expand, load_config  # noqa: E402
 from aishot.logger import LOG, setup_logging  # noqa: E402
 from aishot.screenshotter import ScreenshotCancelled, ToolMissing  # noqa: E402
+from aishot.ui import BOLD, DIM, GREEN, RED, Ui  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BUNDLED_CONFIG = REPO_ROOT / "config.toml"
+
+BANNER = r"""
+    _    ___   ____  _        _
+   / \  |_ _|/ ___|| |_ __ _| |_ | |_
+  / _ \  | | \___ \| __/ _` | __|| __|
+ / ___ \ | |  ___) | || (_| | |_ | |_
+/_/   \_\___||____/ \__\__,_|\__| \__|
+"""
+
+
+def _print_banner(cfg: dict) -> None:
+    print(BOLD(GREEN(BANNER)) + DIM(
+        f"  конфиг: {default_config_path()}\n"
+        f"  модель: {cfg['llm']['model']} @ {cfg['llm']['base_url']}"
+        f"  (vision={'вкл' if cfg['llm'].get('vision', True) else 'выкл'})\n"))
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -48,26 +64,33 @@ def cmd_run(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
     setup_logging(cfg)
     ensure_dirs(cfg)
+    _print_banner(cfg)
     question = " ".join(args.question).strip() if args.question else ""
     if not question and not sys.stdin.isatty():
         question = sys.stdin.read().strip()
+    ui = Ui(cfg)
     try:
-        answer = pipeline.run_once(cfg, question)
+        answer = pipeline.run_once(cfg, question, ui=ui)
+        print("\n" + BOLD("💬 Ответ ИИ:"))
         print(answer)
+        LOG.info("Ответ выведен в терминал (%d симв.)", len(answer))
         return 0
     except ScreenshotCancelled:
         return 0
     except (ToolMissing, RuntimeError) as e:
         LOG.error("%s", e)
-        print(f"❌ {e}", file=sys.stderr)
+        print(RED(f"❌ {e}"), file=sys.stderr)
         return 1
     except Exception as e:  # noqa: BLE001
         from aishot.llm import LlmError
         if isinstance(e, LlmError):
             LOG.error("%s", e)
-            print(f"❌ {e}", file=sys.stderr)
+            print(RED(f"❌ {e}"), file=sys.stderr)
+            print(DIM("   Проверь: сервер запущен? порт/модель в config.toml [llm]? (aishot test)"),
+                  file=sys.stderr)
             return 1
         LOG.exception("Непредвиденная ошибка")
+        print(RED(f"❌ Непредвиденная ошибка: {e} (подробности в логе)"), file=sys.stderr)
         return 1
 
 
@@ -77,16 +100,18 @@ def cmd_file(args: argparse.Namespace) -> int:
     ensure_dirs(cfg)
     path = expand(args.path)
     if not path.is_file():
-        print(f"❌ Файл не найден: {path}", file=sys.stderr)
+        print(RED(f"❌ Файл не найден: {path}"), file=sys.stderr)
         return 1
     question = " ".join(args.question).strip() if args.question else ""
+    ui = Ui(cfg)
     try:
-        answer = pipeline.process_image(cfg, path, question)
+        answer = pipeline.process_image(cfg, path, question, ui=ui)
+        print("\n" + BOLD("💬 Ответ ИИ:"))
         print(answer)
         return 0
     except Exception as e:  # noqa: BLE001
         LOG.error("%s", e)
-        print(f"❌ {e}", file=sys.stderr)
+        print(RED(f"❌ {e}"), file=sys.stderr)
         return 1
 
 
@@ -98,6 +123,7 @@ def cmd_watch(args: argparse.Namespace) -> int:
     watch_dir = expand(cfg["general"]["screenshots_dir"])
     interval = float(cfg["general"].get("watch_interval", 2))
     LOG.info("Watch mode: слежу за %s каждые %.1fс (Ctrl+C — выход)", watch_dir, interval)
+    print(BOLD(GREEN("👀 Watch:")) + f" слежу за {watch_dir} (каждые {interval:.0f}с, Ctrl+C — выход)")
 
     seen: set[Path] = set(watch_dir.glob("*"))
     while True:
@@ -111,12 +137,17 @@ def cmd_watch(args: argparse.Namespace) -> int:
                     continue
                 seen.add(f)
                 LOG.info("Обнаружен новый скриншот: %s", f.name)
+                print(DIM(f"› новый файл: {f.name}"))
+                ui = Ui(cfg)
                 try:
-                    pipeline.process_image(cfg, f, "")
+                    pipeline.process_image(cfg, f, "", ui=ui)
                 except Exception as e:  # noqa: BLE001
+                    ui.finish()
                     LOG.error("Ошибка обработки %s: %s", f, e)
+                    print(RED(f"❌ {e}"), file=sys.stderr)
         except KeyboardInterrupt:
             LOG.info("Watch остановлен")
+            print("\n👋 Watch остановлен")
             return 0
 
 
@@ -143,9 +174,15 @@ def cmd_test(args: argparse.Namespace) -> int:
             models = [m.get("name", "?") for m in data.get("data", [])]
             print(f"✅ LLM-сервер {base} отвечает. Модели: {', '.join(models) or '—'}")
             if cfg["llm"]["model"] not in models and models:
-                print(f"⚠️ Модель '{cfg['llm']['model']}' не найдена среди загруженных/доступных")
+                print(f"⚠️  Модель '{cfg['llm']['model']}' не найдена среди доступных.")
+                print(f"    Подставь в config.toml [llm] model одну из: {', '.join(models)}")
     except Exception as e:  # noqa: BLE001
         print(f"❌ LLM-сервер {base} недоступен: {e}")
+        low = base.lower()
+        if "1234" in low or "lmstudio" in low or "localhost" in low:
+            print("   LM Studio: вкладка Developer → Server → Start (порт 1234), статус Ready.")
+        else:
+            print("   ollama: `ollama serve` + `ollama pull <модель>`; llama.cpp: запусти server.")
         ok = False
 
     noct = expand(cfg["notify"]["noctalia_socket"])

@@ -44,15 +44,18 @@ psm = 3
 
 [llm]
 # Локальная нейросеть. Любой OpenAI-совместимый сервер:
+#   LM Studio (Server → Start, порт 1234) → http://localhost:1234/v1  ← твой вариант
 #   ollama serve  →  http://127.0.0.1:11434/v1  (модели: qwen2.5vl, llama3.2-vision, minicpm-v...)
 #   llama.cpp server → http://127.0.0.1:8080/v1
-#   vlm run / lmstudio → http://localhost:1234/v1
-base_url = "http://127.0.0.1:11434/v1"
-api_key = "ollama"          # для ollama любой, для других — реальный ключ
-# Модель ставишь сам в `[prompt]` ниже или здесь. Важно: для скриншотов
-# нужна ВИЖЕН-версия (Qwen VL), чисто текстовая Qwen картинку не увидит —
-# тогда она будет решать задачу только по OCR-тексту (vision = false).
-model = "qwen3-vl:8b"       # пример; замени на свою (например qwen3.6)
+base_url = "http://localhost:1234/v1"
+api_key = "lmstudio"         # LM Studio ключ не проверяет — любая строка; для других — реальный ключ
+# ВАЖНО: в LM Studio должна быть загружена ВИЖЕН-модель (со значком image/Vision
+# в списке моделей, например Qwen2.5-VL / Qwen3-VL / MiniCPM-V / gemma-3-vision).
+# Чисто текстовая модель картинку не увидит — тогда поставь vision = false ниже,
+# и она будет решать задачу только по OCR-тексту со скриншота.
+# Название здесь должно СОВПАДАТЬ с тем, что показывает LM Studio в API-строке
+# (Developer tab → endpoint). Можно уточнить списком: curl http://localhost:1234/v1/models
+model = "qwen3-vl-8b"
 # vision = false — модель текстовая, отправлять только OCR-текст
 vision = true
 temperature = 0.3
