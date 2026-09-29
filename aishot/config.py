@@ -36,8 +36,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "filename_template": "shot_{time:%Y-%m-%d_%H-%M-%S}.png",
     },
     "slurp": {
-        "selection_color": "b4befe40",
-        "border_color": "cba6f7",
+        # Серая маска: невыделенная область затемняется до ~25% яркости (AA=40 hex ≈ 25%).
+        # Внутри выделения картинка остаётся полностью прозрачной (виден реальный экран).
+        "selection_color": "3a3a3a40",
+        "border_color": "9e9e9e",   # серая рамка выделения
         "border_weight": 2,
         "show_dimensions": True,
         "format": "%x,%y %wx%h",

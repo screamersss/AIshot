@@ -13,9 +13,11 @@ language = "ru"
 filename_template = "shot_{time:%Y-%m-%d_%H-%M-%S}.png"
 
 [slurp]
-# Цвет выделения области: RRGGBB или RRGGBBAA (hex). catppuccin mauve с 25% прозрачностью:
-selection_color = "b4befe40"
-border_color = "cba6f7"
+# Цвет маски выделения: RRGGBBAA (hex). Серая маска — невыделенная область
+# затемняется до ~25% яркости; внутри рамки экран виден как есть.
+# Меняешь тон/силу затемнения последними 2 символами (альфа): 40≈25%, 66≈40%, 80≈50%.
+selection_color = "3a3a3a40"
+border_color = "9e9e9e"   # серая рамка выделения
 border_weight = 2
 # Показывать размеры выделяемой области (-d)
 show_dimensions = true
