@@ -6,3 +6,10 @@ __pycache__/
 docs/AIShot.md
 docs/troubleshooting.md
 docs/my_system.md
+
+# виртуальное окружение и кэш
+.venv/
+venv/
+.idea/workspace.xml
+.idea/modules.xml
+.idea/misc.xml
