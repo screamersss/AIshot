@@ -48,10 +48,10 @@ def build_slurp_cmd(cfg: dict) -> list[str]:
     if not _HEX_RE.match(color):
         LOG.warning("Некорректный selection_color '%s', беру дефолт", color)
         color = "b4befe40"
-    cmd += ["-c", color]
+    cmd += ["-c", f"#{color}"]                # цвет маски выделения (RRGGBBAA, альфа = сила затемнения)
     border = str(s.get("border_color", "cba6f7"))
     if _HEX_RE.match(border):
-        cmd += ["-b", border[:6]]  # slurp хочет RRGGBB без альфы
+        cmd += ["-b", f"#{border[:6]}"]        # slurp-wlroots хочет RRGGBB без альфы
     cmd += ["-w", str(int(s.get("border_weight", 2)))]
     if s.get("show_dimensions", True):
         cmd.append("-d")
@@ -73,7 +73,25 @@ def build_grim_cmd(cfg: dict, geometry: str, out_path: Path) -> list[str]:
 
 
 def select_region(cfg: dict) -> str:
-    """Запускает slurp, возвращает геометрию 'X,Y WxH'. Бросает ScreenshotCancelled на Esc."""
+    """Выбор области.
+
+    Порядок:
+      1. Если overlay_mode = v2 и доступны pywayland+Pillow — собственный
+         оверлей «прожектор»: фон затемнён (настраивается), ВНУТРИ рамки
+         картинка остаётся яркой и полностью видимой.
+      2. Иначе — обычный slurp с ПРОЗРАЧНОЙ маской (#RRGGBBAA00): рамка и
+         размеры видны, но экран под ними не закрашивается вообще.
+    Возвращает геометрию 'X,Y WxH'. Бросает ScreenshotCancelled на Esc.
+    """
+    mode = str(cfg["slurp"].get("overlay_mode", "v2")).lower()
+    if mode in ("v2", "2", "overlay"):
+        try:
+            from . import overlay
+            if overlay.available(cfg):
+                return overlay.select_region_overlay(cfg)
+            LOG.debug("Оверлей v2 недоступен (нет pywayland/Pillow) — беру slurp")
+        except Exception as exc:  # noqa: BLE001
+            LOG.warning("Оверлей v2 не запустился (%s) — перехожу на slurp", exc)
     _require("slurp")
     _require("grim")
     res = subprocess.run(build_slurp_cmd(cfg), capture_output=True, text=True)

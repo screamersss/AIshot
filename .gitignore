@@ -1,15 +1,6 @@
+# Compiled and build artifacts
 __pycache__/
 *.pyc
-.answer.txt
 
-# личные заметки (не публикуем)
-docs/AIShot.md
-docs/troubleshooting.md
-docs/my_system.md
-
-# виртуальное окружение и кэш
-.venv/
-venv/
-.idea/workspace.xml
-.idea/modules.xml
-.idea/misc.xml
+# Environment
+.env
