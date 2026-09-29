@@ -55,7 +55,7 @@ api_key = "lmstudio"         # LM Studio ключ не проверяет — л
 # и она будет решать задачу только по OCR-тексту со скриншота.
 # Название здесь должно СОВПАДАТЬ с тем, что показывает LM Studio в API-строке
 # (Developer tab → endpoint). Можно уточнить списком: curl http://localhost:1234/v1/models
-model = "huihui-qwen3.8-27b-abliterated"  # имя из /v1/models твоего LM Studio (текстовая, vision=false)
+model = "prism-ml/bonsai-27b"  # имя из /v1/models LM Studio (текстовая, OCR-режим)
 # vision = false — модель текстовая, отправлять только OCR-текст
 vision = false
 temperature = 0.3
