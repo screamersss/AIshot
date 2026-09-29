@@ -1,5 +1,25 @@
-"""Загрузка и валидация конфигурации AiShot (единый config.toml)."""
+"""Загрузка и валидация конфигурации AiShot (единый config.toml).
+
+ВАЖНО: это модуль-библиотека, НЕ скрипт — у него нет точки входа, поэтому
+`python aishot/config.py` завершается мгновенно и без вывода (exit code 0).
+Запускать нужно CLI пакета:  python -m aishot run / test / watch / init
+В PyCharm используй готовые конфигурации запуска «AiShot: …»
+(Run → Edit Configurations), а не запуск отдельных файлов кнопкой ▶.
+"""
 from __future__ import annotations
+
+if __name__ == "__main__":  # защита от «запустил не тот файл»
+    import sys
+
+    print(
+        "⚠ config.py — это модуль настроек, запускать его напрямую бессмысленно.\n"
+        "  Нужно так:\n"
+        "      python -m aishot test\n"
+        "      python -m aishot run \"твой вопрос\"\n"
+        "  В PyCharm: Run → Edit Configurations → выбери «AiShot: test» или «AiShot: run».",
+        file=sys.stderr,
+    )
+    sys.exit(2)
 
 import copy
 import os
